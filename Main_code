@@ -1,0 +1,69 @@
+import cv2
+import moviepy.editor as mp
+
+# Taking the input
+video_path = "/content/New Robot Makes Soldiers Obsolete (Corridor Digital).mp4"
+
+# Predetermined interesting clips (in seconds)
+interesting_clips = [(165,169 ),(42,45),(60,65),(123,128),(147,152),(204,210)]
+
+# Output video attributes
+output_video_name = "social_media_short.mp4"
+target_duration = 30  # seconds
+target_aspect_ratio = "9:16"
+
+
+def get_clip(video, start_time, end_time):
+    """Extracts a clip from the video based on timestamps."""
+    cap = cv2.VideoCapture(video)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    start_frame = int(fps * start_time)
+    end_frame = int(fps * end_time)
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+
+    clip = []
+    while True:
+        ret, frame = cap.read()
+        if not ret or cap.get(cv2.CAP_PROP_POS_FRAMES) > end_frame:
+            break
+        clip.append(frame)
+
+    cap.release()
+    return mp.ImageSequenceClip(clip, fps=fps)  # Use MoviePy for clip object
+
+
+def create_short_video(video_path, interesting_clips, target_duration, target_aspect_ratio):
+    """Creates a short video with music, transitions, and text overlays."""
+
+    # Get video clips using MoviePy
+    clips = [get_clip(video_path, start, end) for start, end in interesting_clips]
+
+    # Define music and transitions
+    music_path = "/content/ReelAudio-14087.mp3"  # Replace with your music path
+    music = mp.AudioFileClip(music_path)
+    shortened_music = music.subclip(56, 86)  # Adjust duration if needed
+
+    # Concatenate clips for transitions (using MoviePy)
+    transitions = mp.concatenate_videoclips(clips, method="compose")
+
+    # Combine clips, music, transitions, and text overlays
+    final_clip = mp.concatenate_videoclips([clip for clip in clips], method="compose")
+    final_clip = final_clip.set_duration(target_duration)
+    final_clip = final_clip.set_fps(shortened_music.fps)
+    final_clip = final_clip.set_audio(shortened_music)
+
+    # Ensure aspect ratio matches target (optional)
+    if target_aspect_ratio == "9:16":
+        width, height = final_clip.w, final_clip.h
+        new_width, new_height = int(width * 16 / 9), height
+        if new_width != width:
+            final_clip = final_clip.resize(width=new_width)
+
+    # Save the final video
+    final_clip.write_videofile(output_video_name)
+
+    print(f"Short video '{output_video_name}' created successfully!")
+
+
+create_short_video(video_path, interesting_clips, target_duration, target_aspect_ratio)
