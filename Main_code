@@ -32,6 +32,10 @@ def get_clip(video, start_time, end_time):
     cap.release()
     return mp.ImageSequenceClip(clip, fps=fps)  # Use MoviePy for clip object
 
+# Load audio and analyze beats
+audio_path = os.path.splitext(video_path)[0] + '.wav'
+audio = imageio.audio.read(audio_path)
+beats = librosa.onset.onset_find(audio, sr=librosa.load(audio_path, sr=None)[0])
 
 def create_short_video(video_path, interesting_clips, target_duration, target_aspect_ratio):
     """Creates a short video with music, transitions, and text overlays."""
